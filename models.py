@@ -49,7 +49,13 @@ class Pets(db.Model):
     race = db.Column(db.String(50), nullable=False)
     birthday = db.Column(db.String(50), nullable=False)
     image = db.Column(db.String(50), nullable=False)
-    related_users = db.relationship('Users', secondary = users_pets)
+    # vaccines_pet = db.relationship('Vaccines', backref='pet_vaccines', db.ForeignKey('vaccines.id'))
+    vaccines_id =db.Column('vaccines', db.Integer, db.ForeignKey('vaccines.id'))
+    # dewormings_pet = db.relationship('Deworming', backref='pet_dewormings', db.ForeingKey('dewormings.id'))
+    # weights_pet = db.relationship('weight', backref='pet_weights', db.ForeingKey = 'Weights.id')
+    # med_historys_pet = db.relationship('med_history', backref='pet_med_historys', db.ForeingKey = 'Med_historys.id')
+    # events_pet = db.relationship('event', backref='pet_events', db.ForeingKey = 'Events.id')
+    related_users = db.relationship('Users', secondary = users_pets, backref = 'pets_linked')
 
     def serialize(self):
         return {
@@ -58,7 +64,12 @@ class Pets(db.Model):
             'animal': self.animal,
             'race': self.race,
             'birthday': self.birthday,
-            'image': self.image 
+            'image': self.image,
+            'vaccines_pet': [vaccine.serialize() for vaccine in self.vaccines_pet],
+            'dewormings_pet': [deworming.serialize() for deworming in self.dewormings_pet],
+            'weights_pet': [weight.serialize() for weight in self.weights_pet],
+            'med_historys_pet': [med_history.serialize() for med_history in self.weights_pet],
+            'events_pet': [event.serialize() for event in self.events_pet],
             'related_users': [user.serialize() for user in self.related_users]
         }
 
@@ -71,6 +82,7 @@ class Vaccines(db.Model):
     vaccine = db.Column(db.String(50), nullable=False)
     next_vaccine = db.Column(db.String(50), nullable=False)
     image = db.Column(db.String(50), nullable=False)
+    pets = db.relationship('Pets', backref='pets')
 
     def serialize(self):
         return {
@@ -79,83 +91,83 @@ class Vaccines(db.Model):
             'weight': self.weight,
             'vaccine': self.vaccine,
             'next_vaccine': self.next_vaccine,
-            'image': self.image 
+            'image': self.image
         }
 
 
-class Dewormings(db.Model):
-    __tablename__ = "dewormings"
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.String(50), nullable=False)
-    medicine = db.Column(db.Integer, nullable=False)
-    dose = db.Column(db.String(50), nullable=False)
-    weight = db.Column(db.Integer, nullable=False)
-    next_deworming = db.Column(db.String(50), nullable=False)
-    
-    def serialize(self):
-        return {
-            'id': self.id,
-            'date': self.date,
-            'medicine': self.medicine,
-            'dose': self.vaccine,
-            'weight': self.weight,
-            'next_deworming': self.next_deworming
-        }
-
-
-class Weight_control(db.Model):
-    __tablename__ = "weight_control"
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.String(50), nullable=False)
-    weight = db.Column(db.Integer, nullable=False)
-    food = db.Column(db.Integer, nullable=False)
-    food_dose = db.Column(db.String(50), nullable=False)
-    water_dose = db.Column(db.String(50), nullable=False)
-    
-    def serialize(self):
-        return {
-            'id': self.id,
-            'date': self.date,
-            'weight': self.weight,
-            'food': self.food,
-            'food_dose': self.food_dose,
-            'water_dose': self.water_dose
-        }
-
-
-class Medical_history(db.Model):
-    __tablename__ = "medical_history"
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.String(50), nullable=False)
-    weight = db.Column(db.Integer, nullable=False)
-    food = db.Column(db.Integer, nullable=False)
-    food_dose = db.Column(db.String(50), nullable=False)
-    water_dose = db.Column(db.String(50), nullable=False)
-    
-    def serialize(self):
-        return {
-            'id': self.id,
-            'date': self.date,
-            'weight': self.weight,
-            'food': self.food,
-            'food_dose': self.food_dose,
-            'water_dose': self.water_dose
-        }
-
-
-class Events(db.Model):
-    __tablename__ = "events"
-    id = db.Column(db.Integer, primary_key=True)
-    event_type = db.Column(db.String(50), nullable=False)
-    event_time = db.Column(db.Integer, nullable=False)
-    duration = db.Column(db.Integer, nullable=False)
+# class Dewormings(db.Model):
+#     __tablename__ = "dewormings"
+#     id = db.Column(db.Integer, primary_key=True)
+#     date = db.Column(db.String(50), nullable=False)
+#     medicine = db.Column(db.Integer, nullable=False)
+#     dose = db.Column(db.String(50), nullable=False)
+#     weight = db.Column(db.Integer, nullable=False)
+#     next_deworming = db.Column(db.String(50), nullable=False)
         
-    def serialize(self):
-        return {
-            'id': self.id,
-            'event_type': self.event_type,
-            'event_time': self.event_time,
-            'duration': self.duration
-        }
+#     def serialize(self):
+#         return {
+#             'id': self.id,
+#             'date': self.date,
+#             'medicine': self.medicine,
+#             'dose': self.vaccine,
+#             'weight': self.weight,
+#             'next_deworming': self.next_deworming
+#         }
+
+
+# class Weight_control(db.Model):
+#     __tablename__ = "weight_control"
+#     id = db.Column(db.Integer, primary_key=True)
+#     date = db.Column(db.String(50), nullable=False)
+#     weight = db.Column(db.Integer, nullable=False)
+#     food = db.Column(db.Integer, nullable=False)
+#     food_dose = db.Column(db.String(50), nullable=False)
+#     water_dose = db.Column(db.String(50), nullable=False)
+    
+#     def serialize(self):
+#         return {
+#             'id': self.id,
+#             'date': self.date,
+#             'weight': self.weight,
+#             'food': self.food,
+#             'food_dose': self.food_dose,
+#             'water_dose': self.water_dose
+#         }
+
+
+# class Medical_history(db.Model):
+#     __tablename__ = "medical_history"
+#     id = db.Column(db.Integer, primary_key=True)
+#     date = db.Column(db.String(50), nullable=False)
+#     weight = db.Column(db.Integer, nullable=False)
+#     food = db.Column(db.Integer, nullable=False)
+#     food_dose = db.Column(db.String(50), nullable=False)
+#     water_dose = db.Column(db.String(50), nullable=False)
+    
+#     def serialize(self):
+#         return {
+#             'id': self.id,
+#             'date': self.date,
+#             'weight': self.weight,
+#             'food': self.food,
+#             'food_dose': self.food_dose,
+#             'water_dose': self.water_dose
+#         }
+
+
+# class Events(db.Model):
+#     __tablename__ = "events"
+#     id = db.Column(db.Integer, primary_key=True)
+#     event_type = db.Column(db.String(50), nullable=False)
+#     event_time = db.Column(db.Integer, nullable=False)
+#     duration = db.Column(db.Integer, nullable=False)
+        
+#     def serialize(self):
+#         return {
+#             'id': self.id,
+#             'event_type': self.event_type,
+#             'event_time': self.event_time,
+#             'duration': self.duration
+#         }
 
 
