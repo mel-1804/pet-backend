@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
-from models import db, Users, Pets, Vaccines
+from models import db, Users, Pets, Vaccines, Dewormings, Weight_control, Medical_history, Events
 from flask_cors import CORS
 
 app = Flask(__name__)
