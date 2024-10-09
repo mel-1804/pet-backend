@@ -117,7 +117,7 @@ class Dewormings(db.Model):
             'pet_id': self.pet_id,
             'date': self.date,
             'medicine': self.medicine,
-            'dose': self.vaccine,
+            'dose': self.dose,
             'weight': self.weight,
             'next_deworming': self.next_deworming
         }
