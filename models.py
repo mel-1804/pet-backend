@@ -100,84 +100,102 @@ class Vaccines(db.Model):
         }
 
 
-# class Dewormings(db.Model):
-#     __tablename__ = "dewormings"
-#     id = db.Column(db.Integer, primary_key=True)
-#     date = db.Column(db.String(50), nullable=False)
-#     medicine = db.Column(db.Integer, nullable=False)
-#     dose = db.Column(db.String(50), nullable=False)
-#     weight = db.Column(db.Integer, nullable=False)
-#     next_deworming = db.Column(db.String(50), nullable=False)
-#     pets = db.relationship('Pets', backref='pets_dewormings')
+class Dewormings(db.Model):
+    __tablename__ = "dewormings"
+    id = db.Column(db.Integer, primary_key=True)
+    pet_id = db.Column(db.Integer, db.ForeignKey('pets.id'))
+    date = db.Column(db.String(50), nullable=False)
+    medicine = db.Column(db.Integer, nullable=False)
+    dose = db.Column(db.String(50), nullable=False)
+    weight = db.Column(db.Integer, nullable=False)
+    next_deworming = db.Column(db.String(50), nullable=False)
+    pets = db.relationship('Pets', backref='pets_dewormings')
         
-#     def serialize(self):
-#         return {
-#             'id': self.id,
-#             'date': self.date,
-#             'medicine': self.medicine,
-#             'dose': self.vaccine,
-#             'weight': self.weight,
-#             'next_deworming': self.next_deworming
-#         }
+    def serialize(self):
+        return {
+            'id': self.id,
+            'pet_id': self.pet_id,
+            'date': self.date,
+            'medicine': self.medicine,
+            'dose': self.vaccine,
+            'weight': self.weight,
+            'next_deworming': self.next_deworming
+        }
 
 
-# class Weight_control(db.Model):
-#     __tablename__ = "weight_control"
-#     id = db.Column(db.Integer, primary_key=True)
-#     date = db.Column(db.String(50), nullable=False)
-#     weight = db.Column(db.Integer, nullable=False)
-#     food = db.Column(db.Integer, nullable=False)
-#     food_dose = db.Column(db.String(50), nullable=False)
-#     water_dose = db.Column(db.String(50), nullable=False)
-#     pets = db.relationship('Pets', backref='pets_weight_control')
+class Weight_control(db.Model):
+    __tablename__ = "weight_control"
+    id = db.Column(db.Integer, primary_key=True)
+    pet_id = db.Column(db.Integer, db.ForeignKey('pets.id'))
+    date = db.Column(db.String(50), nullable=False)
+    weight = db.Column(db.Integer, nullable=False)
+    food = db.Column(db.Integer, nullable=False)
+    food_dose = db.Column(db.String(50), nullable=False)
+    water_dose = db.Column(db.String(50), nullable=False)
+    pets = db.relationship('Pets', backref='pets_weight_control')
 
     
-#     def serialize(self):
-#         return {
-#             'id': self.id,
-#             'date': self.date,
-#             'weight': self.weight,
-#             'food': self.food,
-#             'food_dose': self.food_dose,
-#             'water_dose': self.water_dose
-#         }
+    def serialize(self):
+        return {
+            'id': self.id,
+            'pet_id': self.pet_id,
+            'date': self.date,
+            'weight': self.weight,
+            'food': self.food,
+            'food_dose': self.food_dose,
+            'water_dose': self.water_dose
+        }
 
 
-# class Medical_history(db.Model):
-#     __tablename__ = "medical_history"
-#     id = db.Column(db.Integer, primary_key=True)
-#     date = db.Column(db.String(50), nullable=False)
-#     weight = db.Column(db.Integer, nullable=False)
-#     food = db.Column(db.Integer, nullable=False)
-#     food_dose = db.Column(db.String(50), nullable=False)
-#     water_dose = db.Column(db.String(50), nullable=False)
-#     pets = db.relationship('Pets', backref='pets_medical_history')
+class Medical_history(db.Model):
+    __tablename__ = "medical_history"
+    id = db.Column(db.Integer, primary_key=True)
+    pet_id = db.Column(db.Integer, db.ForeignKey('pets.id'))
+    date = db.Column(db.String(50), nullable=False)
+    disease_type = db.Column(db.Integer, nullable=False)
+    area = db.Column(db.Integer, nullable=False)
+    symptoms = db.Column(db.String(50), nullable=False)
+    diagnosis = db.Column(db.String(50), nullable=False)
+    medicine = db.Column(db.String(50), nullable=False)
+    dose = db.Column(db.String(50), nullable=False)
+    frecuency = db.Column(db.String(50), nullable=False)
+    since = db.Column(db.String(50), nullable=False)
+    until = db.Column(db.String(50), nullable=False)
+    pets = db.relationship('Pets', backref='pets_medical_history')
     
-#     def serialize(self):
-#         return {
-#             'id': self.id,
-#             'date': self.date,
-#             'weight': self.weight,
-#             'food': self.food,
-#             'food_dose': self.food_dose,
-#             'water_dose': self.water_dose
-#         }
+    def serialize(self):
+        return {
+            'id': self.id,
+            'pet_id': self.pet_id,
+            'date': self.date,
+            'disease_type': self.disease_type,
+            'area': self.area,
+            'symptoms': self.symptoms,
+            'diagnosis': self.diagnosis,
+            'medicine': self.medicine,
+            'dose': self.dose,
+            'frecuency': self.frecuency,
+            'since': self.since,
+            'until': self.until
+        }
 
 
-# class Events(db.Model):
-#     __tablename__ = "events"
-#     id = db.Column(db.Integer, primary_key=True)
-#     event_type = db.Column(db.String(50), nullable=False)
-#     event_time = db.Column(db.Integer, nullable=False)
-#     duration = db.Column(db.Integer, nullable=False)
-#     pets = db.relationship('Pets', backref='pets_events')
+class Events(db.Model):
+    __tablename__ = "events"
+    id = db.Column(db.Integer, primary_key=True)
+    pet_id = db.Column(db.Integer, db.ForeignKey('pets.id'))
+    event_type = db.Column(db.String(50), nullable=False)
+    when = db.Column(db.Integer, nullable=False)
+    duration = db.Column(db.Integer, nullable=False)
+    pets = db.relationship('Pets', backref='pets_events')
         
-#     def serialize(self):
-#         return {
-#             'id': self.id,
-#             'event_type': self.event_type,
-#             'event_time': self.event_time,
-#             'duration': self.duration
-#         }
+    def serialize(self):
+        return {
+            'id': self.id,
+            'pet_id': self.pet_id,
+            'event_type': self.event_type,
+            'when': self.when,
+            'duration': self.duration
+        }
 
 
