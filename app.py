@@ -94,7 +94,7 @@ def create_user():
 
     user.rut = data['rut']
     user.name = data['name']
-    user.lastname = data['lastname']
+    user.lastName = data['lastName']
     user.email = data['email']
     user.password = data['password']
     user.direction = data['direction']
@@ -109,7 +109,26 @@ def create_user():
       'message': 'User created successfully'
     }, 201
 
+@app.route('/login', methods = ['POST'])
+def login():
+    data = request.json
+    user = Users.query.filter_by(email = data['email']).first()
 
+    # print(f'este es el print {type(user.password)}, {type(data['password'])}')
+
+    # validar que el usuario exista
+    # validar que la contraseña coincida con el del usuario
+    if user is not None:
+      if user.password == data['password']:
+        return {'status': 'Success', 'data': user.serialize()}
+      else:
+        return {'message': 'Invalid email or password', 'status': 'Failed'}
+    else:
+      return {'message': 'Invalid email or password', 'status': 'Failed'}
+
+    
+
+   
 @app.route('/createPet', methods = ['POST'])
 def create_pet():
     data = request.json

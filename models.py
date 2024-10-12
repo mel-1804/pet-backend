@@ -13,13 +13,13 @@ class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     rut = db.Column(db.String(10), nullable=False)
     name = db.Column(db.String(50), nullable=False)
-    lastname = db.Column(db.String(50), nullable=False)
+    lastName = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(50), nullable=False)
     direction = db.Column(db.String(80), nullable=False)
     comuna = db.Column(db.String(50), nullable=False)
     region = db.Column(db.String(50), nullable=False)
     cellphone = db.Column(db.Integer, nullable=True)
-    password = db.Column(db.Integer, nullable=False)
+    password = db.Column(db.String, nullable=False)
     image = db.Column(db.String(50), nullable=True)
     owned_pets = db.relationship('Pets', secondary = users_pets, backref = 'users')
     
@@ -28,7 +28,7 @@ class Users(db.Model):
             'id': self.id,
             'rut': self.rut,
             'name': self.name,
-            'lastname': self.lastname,
+            'lastName': self.lastName,
             'email': self.email,
             'direction': self.direction,
             'comuna': self.comuna,
