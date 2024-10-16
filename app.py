@@ -1,7 +1,6 @@
 import os
 import cloudinary
 import cloudinary.uploader
-from cloudinary.utils import cloudinary_url
 
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
@@ -126,9 +125,8 @@ def create_user():
 
         # Upload the image to Cloudinary
         if image:
-
             upload_result = cloudinary.uploader.upload(
-                image, folder='petCenter')
+                image, folder='petCenter', fetch_format="auto", quality="auto")
 
             user.image = upload_result['secure_url']
 
