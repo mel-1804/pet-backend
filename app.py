@@ -101,6 +101,7 @@ def create_user():
     user.comuna = data['comuna']
     user.region = data['region']
     user.cellphone = data['cellphone']
+    user.image = data['image']
 
     db.session.add(user)
     db.session.commit()
