@@ -99,10 +99,8 @@ def get_event_by_id(id):
     }), 201
 
 
-
-
-#--------------------------------------------POST
-@app.route('/createUser', methods = ['POST'])
+# --------------------------------------------POST
+@app.route('/createUser', methods=['POST'])
 def create_user():
     data = request.form
     image = request.files.get('image')
@@ -129,7 +127,7 @@ def create_user():
         # Upload the image to Cloudinary
         if image:
             upload_result = cloudinary.uploader.upload(
-                image, folder='petCenter', fetch_format="auto", quality="auto")
+                image, folder='petCenter', fetch_format="auto", quality="auto", width=500)
 
             user.image = upload_result['secure_url']
 
@@ -139,10 +137,11 @@ def create_user():
 
         return {
             'message': 'User created successfully',
+            'user': user.serialize()
         }, 201
 
     except Exception as e:
-        print(f"Error upload image to Cloudinary: {e}")
+        print(f"Error: upload image to Cloudinary: {e}")
         return {
             'message': 'Error uploading image',
             'error': str(e)
