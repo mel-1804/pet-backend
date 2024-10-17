@@ -86,6 +86,7 @@ def get_event_by_id(id):
 
 
 
+
 #--------------------------------------------POST
 @app.route('/createUser', methods = ['POST'])
 def create_user():
