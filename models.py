@@ -2,10 +2,12 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-users_pets = db.Table('users_pets', 
-    db.Column('users_id', db.Integer, db.ForeignKey('users.id'), primary_key = True),
-    db.Column('pets_id', db.Integer, db.ForeignKey('pets.id'), primary_key = True)
-)
+users_pets = db.Table('users_pets',
+                      db.Column('users_id', db.Integer, db.ForeignKey(
+                          'users.id'), primary_key=True),
+                      db.Column('pets_id', db.Integer, db.ForeignKey(
+                          'pets.id'), primary_key=True)
+                      )
 
 
 class Users(db.Model):
@@ -21,8 +23,8 @@ class Users(db.Model):
     cellphone = db.Column(db.Integer, nullable=True)
     password = db.Column(db.String, nullable=False)
     image = db.Column(db.String(50), nullable=True)
-    owned_pets = db.relationship('Pets', secondary = users_pets, backref = 'users')
-    
+    owned_pets = db.relationship('Pets', secondary=users_pets, backref='users')
+
     def serialize(self):
         return {
             'id': self.id,
@@ -33,8 +35,8 @@ class Users(db.Model):
             'direction': self.direction,
             'comuna': self.comuna,
             'region': self.region,
-            'cellphone': self.cellphone,  
-            'password': self.password,  
+            'cellphone': self.cellphone,
+            'password': self.password,
             'image': self.image,
             'owned_pets': [pet.serialize() for pet in self.owned_pets]
         }
@@ -48,17 +50,6 @@ class Pets(db.Model):
     race = db.Column(db.String(50), nullable=False)
     birthday = db.Column(db.String(50), nullable=False)
     image = db.Column(db.String(50), nullable=True)
-    # vaccines_pet = db.relationship('Vaccines', backref='pet_vaccines', db.ForeignKey('vaccines.id'))
-    # vaccines_id = db.Column('vaccines', db.Integer, db.ForeignKey('vaccines.id'))
-    # dewormings_pet = db.relationship('Deworming', backref='pet_dewormings', db.ForeingKey('dewormings.id'))
-    # dewormings_id = db.Column('dewormings', db.Integer, db.ForeignKey('dewormings.id'))
-    # # weights_pet = db.relationship('weight', backref='pet_weights', db.ForeingKey = 'Weights.id')
-    # weights_pet_id = db.Column('weight_control', db.Integer, db.ForeignKey('weight_control.id'))
-    # # med_historys_pet = db.relationship('med_history', backref='pet_med_historys', db.ForeingKey = 'Med_historys.id')
-    # medical_history_id = db.Column('medical_history', db.Integer, db.ForeignKey('medical_history.id'))
-    # # events_pet = db.relationship('event', backref='pet_events', db.ForeingKey = 'Events.id')
-    # events_id = db.Column('events', db.Integer, db.ForeignKey('events.id'))
-    # related_users = db.relationship('Users', secondary = users_pets, backref = 'pets_linked')
 
     def serialize(self):
         return {
@@ -68,13 +59,6 @@ class Pets(db.Model):
             'race': self.race,
             'birthday': self.birthday,
             'image': self.image
-            # 'vaccines_id': [vaccine.serialize() for vaccine in self.vaccines_id],
-            # 'vaccines_id': self.vaccines_id,
-            # 'dewormings_id': [deworming.serialize() for deworming in self.dewormings_id],
-            # 'weights_pet_id': [weight.serialize() for weight in self.weights_pet_id],
-            # 'medical_history_id': [medical_history.serialize() for medical_history in self.medical_history_id],
-            # 'events_id': [events.serialize() for event in self.events_id],
-            # 'related_users': [user.serialize() for user in self.users]
         }
 
 
@@ -87,7 +71,7 @@ class Vaccines(db.Model):
     vaccine = db.Column(db.String(50), nullable=False)
     next_vaccine = db.Column(db.String(50), nullable=False)
     image = db.Column(db.String(50), nullable=False)
-    
+
     def serialize(self):
         return {
             'id': self.id,
@@ -110,7 +94,7 @@ class Dewormings(db.Model):
     weight = db.Column(db.Integer, nullable=False)
     next_deworming = db.Column(db.String(50), nullable=False)
     pets = db.relationship('Pets', backref='pets_dewormings')
-        
+
     def serialize(self):
         return {
             'id': self.id,
@@ -134,7 +118,6 @@ class Weight_control(db.Model):
     water_dose = db.Column(db.String(50), nullable=False)
     pets = db.relationship('Pets', backref='pets_weight_control')
 
-    
     def serialize(self):
         return {
             'id': self.id,
@@ -162,7 +145,7 @@ class Medical_history(db.Model):
     since = db.Column(db.String(50), nullable=False)
     until = db.Column(db.String(50), nullable=False)
     pets = db.relationship('Pets', backref='pets_medical_history')
-    
+
     def serialize(self):
         return {
             'id': self.id,
@@ -188,7 +171,7 @@ class Events(db.Model):
     when = db.Column(db.Integer, nullable=False)
     duration = db.Column(db.Integer, nullable=False)
     pets = db.relationship('Pets', backref='pets_events')
-        
+
     def serialize(self):
         return {
             'id': self.id,
@@ -197,5 +180,3 @@ class Events(db.Model):
             'when': self.when,
             'duration': self.duration
         }
-
-
