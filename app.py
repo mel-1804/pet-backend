@@ -99,7 +99,10 @@ def get_event_by_id(id):
     }), 201
 
 
-@app.route('/createUser', methods=['POST'])
+
+
+#--------------------------------------------POST
+@app.route('/createUser', methods = ['POST'])
 def create_user():
     data = request.form
     image = request.files.get('image')
