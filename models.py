@@ -36,7 +36,6 @@ class Users(db.Model):
             'comuna': self.comuna,
             'region': self.region,
             'cellphone': self.cellphone,
-            'password': self.password,
             'image': self.image,
             'owned_pets': [pet.serialize() for pet in self.owned_pets]
         }

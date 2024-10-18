@@ -2,10 +2,15 @@ import os
 import cloudinary
 import cloudinary.uploader
 
+from datetime import timedelta
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from models import db, Users, Pets, Vaccines, Dewormings, Weight_control, Medical_history, Events
 from flask_cors import CORS
+from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from dotenv import load_dotenv
+
 
 cloudinary.config(
     cloud_name=os.getenv('CLOUD_NAME'),
@@ -14,12 +19,21 @@ cloudinary.config(
     secure=True
 )
 
+load_dotenv()
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mibasededatos.db'
+app.config["JWT_SECRET_KEY"] = os.getenv('LLAVE_SECRETA_JWT')
+app.config["SECRET_KEY"] = os.getenv("LLAVE_SECRETA")
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=3)
+
 db.init_app(app)
 migrate = Migrate(app, db)
+jwt = JWTManager(app)
+bcrypt = Bcrypt(app)
 CORS(app)
 
+expire = timedelta(minutes=1)
 
 # --------------------------------------------HOME
 @app.route('/', methods=['GET'])
@@ -109,10 +123,12 @@ def create_user():
 
     user_exists = Users.query.filter_by(email=data['email']).first()
 
+
     if user_exists:
         return {
             'message': 'User already exists',
         }, 409
+
 
     try:
         user = Users()
@@ -125,6 +141,8 @@ def create_user():
         user.comuna = data['comuna']
         user.region = data['region']
         user.cellphone = data['cellphone']
+        password_hash = bcrypt.generate_password_hash(data['password'])
+        user.password = password_hash
 
         # Upload the image to Cloudinary
         if image:
@@ -153,18 +171,17 @@ def create_user():
 def login():
     data = request.json
     user = Users.query.filter_by(email=data['email']).first()
-
-    # print(f'este es el print {type(user.password)}, {type(data['password'])}')
-
-    # validar que el usuario exista
-    # validar que la contraseña coincida con el del usuario
+      
     if user is not None:
-        if user.password == data['password']:
-            return {'status': 'Success', 'data': user.serialize()}
+        if bcrypt.check_password_hash(user.password, data['password']):
+            token = create_access_token(identity=user.serialize(), expires_delta=expire)
+
+            return jsonify({'status': 'Success', 'data': user.serialize(),'token': token}), 200
         else:
-            return {'message': 'Invalid email or password', 'status': 'Failed'}
+            return jsonify({'message': 'Invalid email or password', 'status': 'Failed'}), 401
     else:
-        return {'message': 'Invalid email or password', 'status': 'Failed'}
+        return jsonify({'message': 'Invalid email or password', 'status': 'Failed'}), 401
+
 
 
 @app.route('/createPet', methods=['POST'])
