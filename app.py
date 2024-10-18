@@ -1,15 +1,17 @@
 import os
+from datetime import timedelta
 import cloudinary
 import cloudinary.uploader
 
-from datetime import timedelta
+from flask_bcrypt import Bcrypt
+
+
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from models import db, Users, Pets, Vaccines, Dewormings, Weight_control, Medical_history, Events
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
-from dotenv import load_dotenv
 
 
 cloudinary.config(
@@ -19,10 +21,14 @@ cloudinary.config(
     secure=True
 )
 
-load_dotenv()
 
 app = Flask(__name__)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mibasededatos.db'
+app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=60)
+
 app.config["JWT_SECRET_KEY"] = os.getenv('LLAVE_SECRETA_JWT')
 app.config["SECRET_KEY"] = os.getenv("LLAVE_SECRETA")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=3)
@@ -31,11 +37,16 @@ db.init_app(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
+bcrypt = Bcrypt(app)
 CORS(app)
 
+expire = timedelta(minutes=60)
 expire = timedelta(minutes=1)
 
 # --------------------------------------------HOME
+
+
 @app.route('/', methods=['GET'])
 def home():
     return "Welcome"
@@ -113,22 +124,18 @@ def get_event_by_id(id):
     }), 201
 
 
-
-
-#--------------------------------------------POST
-@app.route('/createUser', methods = ['POST'])
+# --------------------------------------------POST
+@app.route('/createUser', methods=['POST'])
 def create_user():
     data = request.form
     image = request.files.get('image')
 
     user_exists = Users.query.filter_by(email=data['email']).first()
 
-
     if user_exists:
         return {
             'message': 'User already exists',
         }, 409
-
 
     try:
         user = Users()
@@ -136,7 +143,7 @@ def create_user():
         user.name = data['name']
         user.lastName = data['lastName']
         user.email = data['email']
-        user.password = data['password']
+        user.password = bcrypt.generate_password_hash(data['password'])
         user.direction = data['direction']
         user.comuna = data['comuna']
         user.region = data['region']
@@ -147,20 +154,24 @@ def create_user():
         # Upload the image to Cloudinary
         if image:
             upload_result = cloudinary.uploader.upload(
-                image, folder='petCenter', fetch_format="auto", quality="auto")
+                image, folder='petCenter', fetch_format="auto", quality="auto", width=500)
 
             user.image = upload_result['secure_url']
 
         # create user
         db.session.add(user)
         db.session.commit()
+        token = create_access_token(
+            identity=user.serialize(), expires_delta=expire)
 
         return {
             'message': 'User created successfully',
+            'token': token,
+            'user': user.serialize()
         }, 201
 
     except Exception as e:
-        print(f"Error upload image to Cloudinary: {e}")
+        print(f"Error: upload image to Cloudinary: {e}")
         return {
             'message': 'Error uploading image',
             'error': str(e)
@@ -171,17 +182,17 @@ def create_user():
 def login():
     data = request.json
     user = Users.query.filter_by(email=data['email']).first()
-      
+
     if user is not None:
         if bcrypt.check_password_hash(user.password, data['password']):
-            token = create_access_token(identity=user.serialize(), expires_delta=expire)
+            token = create_access_token(
+                identity=user.serialize(), expires_delta=expire)
 
-            return jsonify({'status': 'Success', 'data': user.serialize(),'token': token}), 200
+            return jsonify({'status': 'Success', 'data': user.serialize(), 'token': token}), 200
         else:
             return jsonify({'message': 'Invalid email or password', 'status': 'Failed'}), 401
     else:
         return jsonify({'message': 'Invalid email or password', 'status': 'Failed'}), 401
-
 
 
 @app.route('/createPet', methods=['POST'])
