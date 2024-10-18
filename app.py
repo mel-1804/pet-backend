@@ -1,6 +1,10 @@
 import os
+from datetime import timedelta
 import cloudinary
 import cloudinary.uploader
+
+from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
@@ -15,13 +19,22 @@ cloudinary.config(
 )
 
 app = Flask(__name__)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mibasededatos.db'
+app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=60)
+
 db.init_app(app)
 migrate = Migrate(app, db)
+jwt = JWTManager(app)
+bcrypt = Bcrypt(app)
 CORS(app)
 
-
+expire = timedelta(minutes=60)
 # --------------------------------------------HOME
+
+
 @app.route('/', methods=['GET'])
 def home():
     return "Welcome"
@@ -118,7 +131,7 @@ def create_user():
         user.name = data['name']
         user.lastName = data['lastName']
         user.email = data['email']
-        user.password = data['password']
+        user.password = bcrypt.generate_password_hash(data['password'])
         user.direction = data['direction']
         user.comuna = data['comuna']
         user.region = data['region']
@@ -134,9 +147,12 @@ def create_user():
         # create user
         db.session.add(user)
         db.session.commit()
+        token = create_access_token(
+            identity=user.serialize(), expires_delta=expire)
 
         return {
             'message': 'User created successfully',
+            'token': token,
             'user': user.serialize()
         }, 201
 
