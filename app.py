@@ -7,7 +7,7 @@ from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from models import db, Users, Pets, Vaccines, Dewormings, Weight_control, Medical_history, Events
 from flask_cors import CORS
-from flask_bcrypt import bcrypt
+from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 from dotenv import load_dotenv
 
@@ -123,12 +123,12 @@ def create_user():
 
     user_exists = Users.query.filter_by(email=data['email']).first()
 
+
     if user_exists:
         return {
             'message': 'User already exists',
         }, 409
 
-        password_hash = bcrypt.generate_password_hash(data['password'])
 
     try:
         user = Users()
@@ -141,6 +141,8 @@ def create_user():
         user.comuna = data['comuna']
         user.region = data['region']
         user.cellphone = data['cellphone']
+        password_hash = bcrypt.generate_password_hash(data['password'])
+        user.password = password_hash
 
         # Upload the image to Cloudinary
         if image:
@@ -169,20 +171,17 @@ def create_user():
 def login():
     data = request.json
     user = Users.query.filter_by(email=data['email']).first()
-
-    # print(f'este es el print {type(user.password)}, {type(data['password'])}')
-
-    # validar que el usuario exista
-    # validar que la contraseña coincida con el del usuario
+      
     if user is not None:
-        if bcrypt.check_password_hash(usuario.password, data['password']):
-            token = create_access_token(identity=usuario.serialize(), expires_delta=expire)
+        if bcrypt.check_password_hash(user.password, data['password']):
+            token = create_access_token(identity=user.serialize(), expires_delta=expire)
 
-            return jsonify({'status': 'Success', 'data': user.serialize()}), 200
+            return jsonify({'status': 'Success', 'data': user.serialize(),'token': token}), 200
         else:
             return jsonify({'message': 'Invalid email or password', 'status': 'Failed'}), 401
     else:
         return jsonify({'message': 'Invalid email or password', 'status': 'Failed'}), 401
+
 
 
 @app.route('/createPet', methods=['POST'])
