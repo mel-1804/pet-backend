@@ -23,7 +23,6 @@ cloudinary.config(
 
 
 app = Flask(__name__)
-
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mibasededatos.db'
 app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
