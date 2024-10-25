@@ -83,6 +83,20 @@ def get_vaccine_by_id(id):
     }), 201
 
 
+# VACUNA POR MASCOTA--------------------------------------
+@app.route('/getVaccinesByPet/<int:pet_id>', methods=['GET'])
+def get_vaccines_by_pet(pet_id):
+    vaccines = Vaccines.query.filter_by(pet_id=pet_id).all()
+
+    return jsonify({
+        'status': 'Success',
+        'data': [vaccine.serialize() for vaccine in vaccines]
+    }), 200
+
+
+
+
+
 @app.route('/getDeworming/<int:id>', methods=['GET'])
 def get_deworming_by_id(id):
     deworming = Dewormings.query.filter_by(id=id).first()
