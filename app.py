@@ -28,10 +28,6 @@ app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=60)
 
-app.config["JWT_SECRET_KEY"] = os.getenv('LLAVE_SECRETA_JWT')
-app.config["SECRET_KEY"] = os.getenv("LLAVE_SECRETA")
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=3)
-
 db.init_app(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
@@ -153,7 +149,7 @@ def create_user():
         # Upload the image to Cloudinary
         if image:
             upload_result = cloudinary.uploader.upload(
-                image, folder='petCenter', fetch_format="auto", quality="auto", width=500)
+                image, folder='petCenter_user', fetch_format="auto", quality="auto", width=500)
 
             user.image = upload_result['secure_url']
 
@@ -196,15 +192,20 @@ def login():
 
 @app.route('/createPet', methods=['POST'])
 def create_pet():
-    data = request.json
+    data = request.form
+    image = request.files.get('image')
     pet = Pets()
-    user = Users.query.get(data['user_id'])
+    user = Users.query.filter_by(id=data['user_id']).first()
 
     pet.name = data['name']
     pet.animal = data['animal']
     pet.race = data['race']
     pet.birthday = data['birthday']
-    pet.image = data['image']
+    if image:
+        upload_result = cloudinary.uploader.upload(
+            image, folder='petCenter_pets', fetch_format="auto", quality="auto", width=500)
+
+        pet.image = upload_result['secure_url']
 
     user.owned_pets.append(pet)
 
@@ -212,7 +213,8 @@ def create_pet():
     db.session.commit()
 
     return {
-        'message': 'Pet created successfully'
+        'message': 'Pet created successfully',
+        "data": user.serialize()
     }, 201
 
 
