@@ -3,8 +3,6 @@ from datetime import timedelta
 import cloudinary
 import cloudinary.uploader
 
-from flask_bcrypt import Bcrypt
-
 
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
@@ -90,9 +88,6 @@ def get_vaccines_by_pet(pet_id):
     }), 200
 
 
-
-
-
 @app.route('/getDeworming/<int:id>', methods=['GET'])
 def get_deworming_by_id(id):
     deworming = Dewormings.query.filter_by(id=id).first()
@@ -163,7 +158,7 @@ def create_user():
         # Upload the image to Cloudinary
         if image:
             upload_result = cloudinary.uploader.upload(
-                image, folder='petCenter_user', fetch_format="auto", quality="auto", width=500)
+                image, folder='petCenter/users', fetch_format="auto", quality="auto", width=500)
 
             user.image = upload_result['secure_url']
 
@@ -217,7 +212,7 @@ def create_pet():
     pet.birthday = data['birthday']
     if image:
         upload_result = cloudinary.uploader.upload(
-            image, folder='petCenter_pets', fetch_format="auto", quality="auto", width=500)
+            image, folder='petCenter/pets', fetch_format="auto", quality="auto", width=500)
 
         pet.image = upload_result['secure_url']
 
