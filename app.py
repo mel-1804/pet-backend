@@ -2,10 +2,6 @@ import os
 from datetime import timedelta
 import cloudinary
 import cloudinary.uploader
-
-from flask_bcrypt import Bcrypt
-
-
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from models import db, Users, Pets, Vaccines, Dewormings, Weight_control, Medical_history, Events
@@ -32,12 +28,9 @@ db.init_app(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
-jwt = JWTManager(app)
-bcrypt = Bcrypt(app)
 CORS(app)
 
 expire = timedelta(minutes=60)
-expire = timedelta(minutes=1)
 
 # --------------------------------------------HOME
 
@@ -163,7 +156,7 @@ def create_user():
         # Upload the image to Cloudinary
         if image:
             upload_result = cloudinary.uploader.upload(
-                image, folder='petCenter_user', fetch_format="auto", quality="auto", width=500)
+                image, folder='petCenter/users', fetch_format="auto", quality="auto", width=500)
 
             user.image = upload_result['secure_url']
 
@@ -217,7 +210,7 @@ def create_pet():
     pet.birthday = data['birthday']
     if image:
         upload_result = cloudinary.uploader.upload(
-            image, folder='petCenter_pets', fetch_format="auto", quality="auto", width=500)
+            image, folder='petCenter/pets', fetch_format="auto", quality="auto", width=500)
 
         pet.image = upload_result['secure_url']
 
@@ -234,22 +227,48 @@ def create_pet():
 
 @app.route('/createVaccine', methods=['POST'])
 def create_vaccine():
-    data = request.json
-    vaccine = Vaccines()
+    data = request.form
+    image = request.files.get('image')
 
-    vaccine.pet_id = data['pet_id']
-    vaccine.date = data['date']
-    vaccine.weight = data['weight']
-    vaccine.vaccine = data['vaccine']
-    vaccine.next_vaccine = data['next_vaccine']
-    vaccine.image = data['image']
+    try:
+        vaccine = Vaccines()
+        vaccine.pet_id = data['pet_id']
+        vaccine.date = data['date']
+        vaccine.weight = data['weight']
+        vaccine.vaccine = data['vaccine']
+        vaccine.next_vaccine = data['next_vaccine']
+        
+         # Upload the image to Cloudinary
+        if image:
+            try:
+                upload_result = cloudinary.uploader.upload(
+                    image, folder='petCenter/vaccine', fetch_format="auto", quality="auto", width=500)
 
-    db.session.add(vaccine)
-    db.session.commit()
+                vaccine.image = upload_result.get('secure_url')
+            except Exception as img_error:
+                return jsonify({
+                    'message': 'Error uploading image to Cloudinary',
+                    'error': str(img_error)
+                }), 400
+        else:
+            vaccine.image = data.get('image')
 
-    return {
-        'message': 'Vaccine created successfully'
-    }, 201
+
+         # create vaccine
+        db.session.add(vaccine)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Vaccine created successfully'
+        }), 201
+
+    except Exception as e:
+        print(f"Error creating vaccine record: {e}")
+        return jsonify({
+            'message': 'Error creating vaccine record',
+            'error': str(e)
+        }), 500
+
 
 
 @app.route('/createDeworming', methods=['POST'])
