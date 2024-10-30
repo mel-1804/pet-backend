@@ -83,9 +83,6 @@ def get_vaccines_by_pet(pet_id):
     }), 200
 
 
-
-
-
 @app.route('/getDeworming/<int:id>', methods=['GET'])
 def get_deworming_by_id(id):
     deworming = Dewormings.query.filter_by(id=id).first()
@@ -94,6 +91,17 @@ def get_deworming_by_id(id):
         'status': 'Success',
         'data': deworming.serialize()
     }), 201
+
+
+# DESPARACITACIÓN POR MASCOTA--------------------------------------
+@app.route('/getDewormingsByPet/<int:pet_id>', methods=['GET'])
+def get_dewormings_by_pet(pet_id):
+    dewormings = Dewormings.query.filter_by(pet_id=pet_id).all()
+
+    return jsonify({
+        'status': 'Success',
+        'data': [deworming.serialize() for deworming in deworming]
+    }), 200
 
 
 @app.route('/getWeight_control/<int:id>', methods=['GET'])
