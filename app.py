@@ -236,9 +236,9 @@ def create_vaccine():
         vaccine.date = data['date']
         vaccine.weight = data['weight']
         vaccine.vaccine = data['vaccine']
-        vaccine.next_vaccine = data['next_vaccine']
+        vaccine.next_vaccine = data['nextVaccine']
         
-         # Upload the image to Cloudinary
+        #  Upload the image to Cloudinary
         if image:
             try:
                 upload_result = cloudinary.uploader.upload(
@@ -254,12 +254,13 @@ def create_vaccine():
             vaccine.image = data.get('image')
 
 
-         # create vaccine
+        #  create vaccine
         db.session.add(vaccine)
         db.session.commit()
         
         return jsonify({
-            'message': 'Vaccine created successfully'
+            'message': 'Vaccine created successfully',
+            'data': vaccine.serialize()
         }), 201
 
     except Exception as e:
@@ -267,7 +268,7 @@ def create_vaccine():
         return jsonify({
             'message': 'Error creating vaccine record',
             'error': str(e)
-        }), 500
+        }), 400
 
 
 
