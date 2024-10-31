@@ -83,9 +83,6 @@ def get_vaccines_by_pet(pet_id):
     }), 200
 
 
-
-
-
 @app.route('/getDeworming/<int:id>', methods=['GET'])
 def get_deworming_by_id(id):
     deworming = Dewormings.query.filter_by(id=id).first()
@@ -225,6 +222,38 @@ def create_pet():
     }, 201
 
 
+@app.route('/deletePet', methods=['DELETE'])
+def delete_pet():
+    try:
+        data = request.json
+        pet_id = data.get('petId')
+        user_id = data.get('userId')
+
+        user = Users.query.filter_by(id=user_id).first()
+        pet = Pets.query.filter_by(id=pet_id).first()
+
+        if not user or not pet:
+            return jsonify({"message": "User or pet not found"}), 404
+
+        if pet.image:
+            public_id = pet.image.split('/')[-1].split('.')[0]
+            cloudinary.uploader.destroy(f'petCenter/pets/{public_id}')
+
+        db.session.delete(pet)
+        db.session.commit()
+
+        updated_user = user.serialize()
+
+        return jsonify({
+            "message": "Pet deleted successfully",
+            "data": updated_user
+        }), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500
+
+
 @app.route('/createVaccine', methods=['POST'])
 def create_vaccine():
     data = request.form
@@ -237,7 +266,7 @@ def create_vaccine():
         vaccine.weight = data['weight']
         vaccine.vaccine = data['vaccine']
         vaccine.next_vaccine = data['nextVaccine']
-        
+
         #  Upload the image to Cloudinary
         if image:
             try:
@@ -253,11 +282,10 @@ def create_vaccine():
         else:
             vaccine.image = data.get('image')
 
-
         #  create vaccine
         db.session.add(vaccine)
         db.session.commit()
-        
+
         return jsonify({
             'message': 'Vaccine created successfully',
             'data': vaccine.serialize()
@@ -269,7 +297,6 @@ def create_vaccine():
             'message': 'Error creating vaccine record',
             'error': str(e)
         }), 400
-
 
 
 @app.route('/createDeworming', methods=['POST'])
