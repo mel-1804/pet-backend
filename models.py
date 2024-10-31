@@ -78,7 +78,7 @@ class Vaccines(db.Model):
             'date': self.date,
             'weight': self.weight,
             'vaccine': self.vaccine,
-            'next_vaccine': self.next_vaccine,
+            'nextVaccine': self.next_vaccine,
             'image': self.image
         }
 
