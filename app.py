@@ -150,14 +150,12 @@ def create_user():
         password_hash = bcrypt.generate_password_hash(data['password'])
         user.password = password_hash
 
-        # Upload the image to Cloudinary
         if image:
             upload_result = cloudinary.uploader.upload(
-                image, folder='petCenter/users', fetch_format="auto", quality="auto", width=500)
+                image, folder='petCenter/users', fetch_format="auto", quality="auto", width=500, crop="fill", height=500)
 
             user.image = upload_result['secure_url']
 
-        # create user
         db.session.add(user)
         db.session.commit()
         token = create_access_token(
@@ -177,10 +175,82 @@ def create_user():
         }, 500
 
 
+@app.route('/updateUser', methods=['POST'])
+def update_user():
+    data = request.form
+    image = request.files.get('image')
+
+    user = Users.query.filter_by(id=data['user_id']).first()
+    if not user:
+        return {
+            'message': 'User not found',
+        }, 404
+
+    existing_user = Users.query.filter(
+        Users.email == data['email'], Users.id != data['user_id']).first()
+    if existing_user:
+        return {
+            'message': 'Email already in use',
+        }, 409
+
+    user.name = data.get('name', user.name)
+    user.lastName = data.get('lastName', user.lastName)
+    user.email = data.get('email', user.email)
+
+    try:
+        if image:
+            if user.image:
+                public_id = user.image.split(
+                    '/')[-1].split('.')[0]
+                cloudinary.uploader.destroy(public_id)
+
+            upload_result = cloudinary.uploader.upload(
+                image, folder='petCenter/users', fetch_format="auto", quality="auto", width=500, crop="fill", height=500
+            )
+            user.image = upload_result['secure_url']
+
+        db.session.commit()
+        token = create_access_token(
+            identity=user.serialize(), expires_delta=expire)
+
+        return {
+            'message': 'User updated successfully',
+            'token': token,
+            'user': user.serialize()
+        }, 200
+
+    except Exception as e:
+        print(f"Error updating image in Cloudinary: {e}")
+        return {
+            'message': 'Error updating user or image',
+            'error': str(e)
+        }, 500
+
+
+@app.route('/deleteUser/<int:id>', methods=['POST'])
+def deleteUser(id):
+    try:
+        user = Users.query.filter_by(id=id).first()
+        if user:
+            user.is_active = False
+
+            db.session.commit()
+            return jsonify({"message": "User has been deactivated."}), 200
+        else:
+            return jsonify({"error": "User not found."}), 404
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error deactivating user: {str(e)}"}), 500
+
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
     user = Users.query.filter_by(email=data['email']).first()
+
+    if not user.is_active:
+        return jsonify({'message': 'Invalid email or password',
+                        'status': 'Failed'}), 401
 
     if user is not None:
         if bcrypt.check_password_hash(user.password, data['password']):
@@ -207,7 +277,7 @@ def create_pet():
     pet.birthday = data['birthday']
     if image:
         upload_result = cloudinary.uploader.upload(
-            image, folder='petCenter/pets', fetch_format="auto", quality="auto", width=500)
+            image, folder='petCenter/pets', fetch_format="auto", quality="auto", width=500, crop="fill", height=500)
 
         pet.image = upload_result['secure_url']
 
