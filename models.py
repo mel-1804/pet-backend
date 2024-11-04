@@ -24,6 +24,7 @@ class Users(db.Model):
     password = db.Column(db.String, nullable=False)
     image = db.Column(db.String(50), nullable=True)
     owned_pets = db.relationship('Pets', secondary=users_pets, backref='users')
+    is_active = db.Column(db.Boolean, default=True)
 
     def serialize(self):
         return {
@@ -37,7 +38,8 @@ class Users(db.Model):
             'region': self.region,
             'cellphone': self.cellphone,
             'image': self.image,
-            'owned_pets': [pet.serialize() for pet in self.owned_pets]
+            'owned_pets': [pet.serialize() for pet in self.owned_pets],
+            'is_active': self.is_active
         }
 
 

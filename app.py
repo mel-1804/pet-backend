@@ -161,14 +161,12 @@ def create_user():
         password_hash = bcrypt.generate_password_hash(data['password'])
         user.password = password_hash
 
-        # Upload the image to Cloudinary
         if image:
             upload_result = cloudinary.uploader.upload(
-                image, folder='petCenter/users', fetch_format="auto", quality="auto", width=500, height=500, crop="fill", gravity="auto")
+                image, folder='petCenter/users', fetch_format="auto", quality="auto", width=500, crop="fill", height=500)
 
             user.image = upload_result['secure_url']
 
-        # create user
         db.session.add(user)
         db.session.commit()
         token = create_access_token(
@@ -188,10 +186,82 @@ def create_user():
         }, 500
 
 
+@app.route('/updateUser', methods=['POST'])
+def update_user():
+    data = request.form
+    image = request.files.get('image')
+
+    user = Users.query.filter_by(id=data['user_id']).first()
+    if not user:
+        return {
+            'message': 'User not found',
+        }, 404
+
+    existing_user = Users.query.filter(
+        Users.email == data['email'], Users.id != data['user_id']).first()
+    if existing_user:
+        return {
+            'message': 'Email already in use',
+        }, 409
+
+    user.name = data.get('name', user.name)
+    user.lastName = data.get('lastName', user.lastName)
+    user.email = data.get('email', user.email)
+
+    try:
+        if image:
+            if user.image:
+                public_id = user.image.split(
+                    '/')[-1].split('.')[0]
+                cloudinary.uploader.destroy(public_id)
+
+            upload_result = cloudinary.uploader.upload(
+                image, folder='petCenter/users', fetch_format="auto", quality="auto", width=500, crop="fill", height=500
+            )
+            user.image = upload_result['secure_url']
+
+        db.session.commit()
+        token = create_access_token(
+            identity=user.serialize(), expires_delta=expire)
+
+        return {
+            'message': 'User updated successfully',
+            'token': token,
+            'user': user.serialize()
+        }, 200
+
+    except Exception as e:
+        print(f"Error updating image in Cloudinary: {e}")
+        return {
+            'message': 'Error updating user or image',
+            'error': str(e)
+        }, 500
+
+
+@app.route('/deleteUser/<int:id>', methods=['POST'])
+def deleteUser(id):
+    try:
+        user = Users.query.filter_by(id=id).first()
+        if user:
+            user.is_active = False
+
+            db.session.commit()
+            return jsonify({"message": "User has been deactivated."}), 200
+        else:
+            return jsonify({"error": "User not found."}), 404
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error deactivating user: {str(e)}"}), 500
+
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
     user = Users.query.filter_by(email=data['email']).first()
+
+    if not user.is_active:
+        return jsonify({'message': 'Invalid email or password',
+                        'status': 'Failed'}), 401
 
     if user is not None:
         if bcrypt.check_password_hash(user.password, data['password']):
@@ -218,7 +288,7 @@ def create_pet():
     pet.birthday = data['birthday']
     if image:
         upload_result = cloudinary.uploader.upload(
-            image, folder='petCenter/pets', fetch_format="auto", quality="auto", width=500)
+            image, folder='petCenter/pets', fetch_format="auto", quality="auto", width=500, crop="fill", height=500)
 
         pet.image = upload_result['secure_url']
 
@@ -233,6 +303,38 @@ def create_pet():
     }, 201
 
 
+@app.route('/deletePet', methods=['DELETE'])
+def delete_pet():
+    try:
+        data = request.json
+        pet_id = data.get('petId')
+        user_id = data.get('userId')
+
+        user = Users.query.filter_by(id=user_id).first()
+        pet = Pets.query.filter_by(id=pet_id).first()
+
+        if not user or not pet:
+            return jsonify({"message": "User or pet not found"}), 404
+
+        if pet.image:
+            public_id = pet.image.split('/')[-1].split('.')[0]
+            cloudinary.uploader.destroy(f'petCenter/pets/{public_id}')
+
+        db.session.delete(pet)
+        db.session.commit()
+
+        updated_user = user.serialize()
+
+        return jsonify({
+            "message": "Pet deleted successfully",
+            "data": updated_user
+        }), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500
+
+
 @app.route('/createVaccine', methods=['POST'])
 def create_vaccine():
     data = request.form
@@ -245,7 +347,7 @@ def create_vaccine():
         vaccine.weight = data['weight']
         vaccine.vaccine = data['vaccine']
         vaccine.next_vaccine = data['nextVaccine']
-        
+
         #  Upload the image to Cloudinary
         if image:
             try:
@@ -261,11 +363,10 @@ def create_vaccine():
         else:
             vaccine.image = data.get('image')
 
-
         #  create vaccine
         db.session.add(vaccine)
         db.session.commit()
-        
+
         return jsonify({
             'message': 'Vaccine created successfully',
             'data': vaccine.serialize()
@@ -277,7 +378,6 @@ def create_vaccine():
             'message': 'Error creating vaccine record',
             'error': str(e)
         }), 400
-
 
 
 @app.route('/createDeworming', methods=['POST'])
