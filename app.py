@@ -1,10 +1,12 @@
+from datetime import datetime
+from flask import request, jsonify
 import os
 from datetime import timedelta
 import cloudinary
 import cloudinary.uploader
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
-from models import db, Users, Pets, Vaccines, Dewormings, Weight_control, Medical_history, Events
+from models import db, Users, Pets, Vaccines, Dewormings, Weight_control, Medical_history, UserCalendarEvent  # Events
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
@@ -434,22 +436,64 @@ def create_medical_history():
     }, 201
 
 
-@app.route('/createEvents', methods=['POST'])
-def create_events():
+# @app.route('/createEvents', methods=['POST'])
+# def create_events():
+#     data = request.json
+#     events = Events()
+
+#     events.pet_id = data['pet_id']
+#     events.event_type = data['event_type']
+#     events.when = data['when']
+#     events.duration = data['duration']
+
+#     db.session.add(events)
+#     db.session.commit()
+
+#     return {
+#         'message': 'Events created successfully'
+#     }, 201
+
+
+# ------- Events ------------------
+
+
+@app.route('/createEvents/<int:id>', methods=['POST'])
+def create_event(id):
     data = request.json
-    events = Events()
+    user_id = data.get('user_id')
+    description = data.get('description')
+    event_date = datetime.fromisoformat(data.get('event_date'))
 
-    events.pet_id = data['pet_id']
-    events.event_type = data['event_type']
-    events.when = data['when']
-    events.duration = data['duration']
-
-    db.session.add(events)
+    new_event = UserCalendarEvent(
+        user_id=user_id,
+        description=description,
+        event_date=event_date,
+    )
+    db.session.add(new_event)
     db.session.commit()
+    events = UserCalendarEvent.query.filter_by(
+        user_id=id).all()
+    serialized_events = [event.serialize() for event in events]
+    return jsonify(serialized_events), 200
 
-    return {
-        'message': 'Events created successfully'
-    }, 201
+
+@app.route('/getEventsByUserId/<int:id>', methods=['GET'])
+def get_events_by_user_id(id):
+    events = UserCalendarEvent.query.filter_by(
+        user_id=id).all()
+    serialized_events = [event.serialize() for event in events]
+    return jsonify(serialized_events), 200
+
+
+@app.route('/deleteEvent/<int:event_id>', methods=['DELETE'])
+def delete_event(event_id):
+    event = UserCalendarEvent.query.get(event_id)
+    if event:
+        db.session.delete(event)
+        db.session.commit()
+        return jsonify({"message": "Evento eliminado con éxito"}), 200
+    else:
+        return jsonify({"error": "Evento no encontrado"}), 404
 
 
 # ---------------------------------------------PUT
