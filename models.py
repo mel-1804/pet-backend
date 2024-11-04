@@ -88,7 +88,7 @@ class Dewormings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     pet_id = db.Column(db.Integer, db.ForeignKey('pets.id'))
     date = db.Column(db.String(50), nullable=False)
-    medicine = db.Column(db.Integer, nullable=False)
+    medicine = db.Column(db.String(50), nullable=False)
     dose = db.Column(db.String(50), nullable=False)
     weight = db.Column(db.Integer, nullable=False)
     next_deworming = db.Column(db.String(50), nullable=False)
@@ -102,7 +102,7 @@ class Dewormings(db.Model):
             'medicine': self.medicine,
             'dose': self.dose,
             'weight': self.weight,
-            'next_deworming': self.next_deworming
+            'nextDeworming': self.next_deworming
         }
 
 

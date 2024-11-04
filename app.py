@@ -100,7 +100,7 @@ def get_dewormings_by_pet(pet_id):
 
     return jsonify({
         'status': 'Success',
-        'data': [deworming.serialize() for deworming in deworming]
+        'data': [deworming.serialize() for deworming in dewormings]
     }), 200
 
 
@@ -164,7 +164,7 @@ def create_user():
         # Upload the image to Cloudinary
         if image:
             upload_result = cloudinary.uploader.upload(
-                image, folder='petCenter/users', fetch_format="auto", quality="auto", width=500)
+                image, folder='petCenter/users', fetch_format="auto", quality="auto", width=500, height=500, crop="fill", gravity="auto")
 
             user.image = upload_result['secure_url']
 
@@ -290,7 +290,7 @@ def create_deworming():
     deworming.medicine = data['medicine']
     deworming.dose = data['dose']
     deworming.weight = data['weight']
-    deworming.next_deworming = data['next_deworming']
+    deworming.next_deworming = data['nextDeworming']
 
     db.session.add(deworming)
     db.session.commit()
