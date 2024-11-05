@@ -164,24 +164,6 @@ class Medical_history(db.Model):
         }
 
 
-# class Events(db.Model):
-#     __tablename__ = "events"
-#     id = db.Column(db.Integer, primary_key=True)
-#     pet_id = db.Column(db.Integer, db.ForeignKey('pets.id'))
-#     event_type = db.Column(db.String(50), nullable=False)
-#     when = db.Column(db.Integer, nullable=False)
-#     duration = db.Column(db.Integer, nullable=False)
-#     pets = db.relationship('Pets', backref='pets_events')
-
-#     def serialize(self):
-#         return {
-#             'id': self.id,
-#             'pet_id': self.pet_id,
-#             'event_type': self.event_type,
-#             'when': self.when,
-#             'duration': self.duration
-#         }
-
 class UserCalendarEvent(db.Model):
     __tablename__ = "user_calendar_events"
     id = db.Column(db.Integer, primary_key=True)
