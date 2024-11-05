@@ -476,6 +476,31 @@ def delete_event(event_id):
         return jsonify({"error": "Evento no encontrado o no pertenece al usuario"}), 404
 
 
+@app.route('/updateEvent/<int:event_id>', methods=["PUT"])
+def update_event(event_id):
+    data = request.json
+    user_id = data.get('user_id')
+    event = UserCalendarEvent.query.get(event_id)
+
+    if event and event.user_id == user_id:
+        if 'date' in data:
+            event.date = data['date']
+        if 'description' in data:
+            event.description = data['description']
+
+        db.session.commit()
+
+        events = UserCalendarEvent.query.filter_by(user_id=user_id).all()
+        serialized_events = [event.serialize() for event in events]
+
+        return jsonify({
+            "message": "Evento actualizado con éxito",
+            "events": serialized_events
+        }), 200
+    else:
+        return jsonify({"error": "Evento no encontrado o no pertenece al usuario"}), 404
+
+
 # ---------------------------------------------PUT
 if __name__ == "__main__":
     app.run(host='localhost', port=5004, debug=True)
