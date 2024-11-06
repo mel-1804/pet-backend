@@ -95,6 +95,17 @@ def get_deworming_by_id(id):
     }), 201
 
 
+# DESPARACITACIÓN POR MASCOTA--------------------------------------
+@app.route('/getDewormingsByPet/<int:pet_id>', methods=['GET'])
+def get_dewormings_by_pet(pet_id):
+    dewormings = Dewormings.query.filter_by(pet_id=pet_id).all()
+
+    return jsonify({
+        'status': 'Success',
+        'data': [deworming.serialize() for deworming in dewormings]
+    }), 200
+
+
 @app.route('/getWeight_control/<int:id>', methods=['GET'])
 def get_weight_control_by_id(id):
     weight_control = Weight_control.query.filter_by(id=id).first()
@@ -371,7 +382,7 @@ def create_deworming():
     deworming.medicine = data['medicine']
     deworming.dose = data['dose']
     deworming.weight = data['weight']
-    deworming.next_deworming = data['next_deworming']
+    deworming.next_deworming = data['nextDeworming']
 
     db.session.add(deworming)
     db.session.commit()
