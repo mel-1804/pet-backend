@@ -10,6 +10,9 @@ from models import db, Users, Pets, Vaccines, Dewormings, Weight_control, Medica
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from functools import wraps
+import jwt
+from jwt.exceptions import ExpiredSignatureError
 
 
 cloudinary.config(
@@ -30,9 +33,44 @@ db.init_app(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
-CORS(app)
+CORS(app, origins="http://localhost:5173")
 
 expire = timedelta(minutes=60)
+
+
+#---------------------------------------------------ENDPOINT RENEW
+@app.route('/renew', methods=['GET'])
+@jwt_required(optional=True)  
+def renew_token():
+    try:
+        user_id = get_jwt_identity()
+        print(f"Valor de user_id obtenido del token: {user_id}")
+
+        if not user_id:
+            return jsonify({'status': 'Error', 'message': 'Token inválido o no presente'}), 401
+
+        user = Users.query.get(user_id)
+        if not user:
+            print("Usuario no encontrado") 
+            return jsonify({'status': 'Error', 'message': 'Usuario no encontrado'}), 404
+
+        # Genera un nuevo token si el token es válido y el usuario existe
+        new_token = create_access_token(identity=user_id)
+        print("Token renovado exitosamente")
+
+        return jsonify({
+            'status': 'Success',
+            'newToken': new_token,
+            'user': user.serialize()
+        }), 200
+
+    except ExpiredSignatureError:
+        print("Token expirado") 
+        return jsonify({'status': 'Error', 'message': 'Token expirado'}), 401
+    except Exception as e:
+        print(f"Error en el servidor: {str(e)}")
+        return jsonify({'status': 'Error', 'message': str(e)}), 500
+
 
 # --------------------------------------------HOME
 
@@ -124,6 +162,9 @@ def get_medical_history_by_id(id):
         'status': 'Success',
         'data': medical_history.serialize()
     }), 201
+
+
+
 
 
 # --------------------------------------------POST
@@ -439,8 +480,8 @@ def create_medical_history():
 
 # ------- Events ------------------
 
-@app.route('/createEvents/<int:id>', methods=['POST'])
-def create_event(id):
+@app.route('/createEvents', methods=['POST'])
+def create_event():
     data = request.json
     user_id = data.get('user_id')
     description = data.get('description')
