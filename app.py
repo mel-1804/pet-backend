@@ -503,7 +503,8 @@ def get_events_by_user_id(id):
     events = UserCalendarEvent.query.filter_by(
         user_id=id).all()
     serialized_events = [event.serialize() for event in events]
-    return jsonify(serialized_events), 200
+    user = get_jwt_identity()
+    return jsonify({'serialized_events': serialized_events, 'user': user}), 200
 
 
 @app.route('/deleteEvent/<int:event_id>', methods=['DELETE'])
