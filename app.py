@@ -10,9 +10,8 @@ from models import db, Users, Pets, Vaccines, Dewormings, Weight_control, Medica
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
-from functools import wraps
 import jwt
-from jwt.exceptions import ExpiredSignatureError
+
 
 
 cloudinary.config(
@@ -38,48 +37,11 @@ CORS(app, origins="http://localhost:5173")
 expire = timedelta(minutes=60)
 
 
-#---------------------------------------------------ENDPOINT RENEW
-@app.route('/renew', methods=['GET'])
-@jwt_required(optional=True)  
-def renew_token():
-    try:
-        user_id = get_jwt_identity()
-        print(f"Valor de user_id obtenido del token: {user_id}")
-
-        if not user_id:
-            return jsonify({'status': 'Error', 'message': 'Token inválido o no presente'}), 401
-
-        user = Users.query.get(user_id)
-        if not user:
-            print("Usuario no encontrado") 
-            return jsonify({'status': 'Error', 'message': 'Usuario no encontrado'}), 404
-
-        # Genera un nuevo token si el token es válido y el usuario existe
-        new_token = create_access_token(identity=user_id)
-        print("Token renovado exitosamente")
-
-        return jsonify({
-            'status': 'Success',
-            'newToken': new_token,
-            'user': user.serialize()
-        }), 200
-
-    except ExpiredSignatureError:
-        print("Token expirado") 
-        return jsonify({'status': 'Error', 'message': 'Token expirado'}), 401
-    except Exception as e:
-        print(f"Error en el servidor: {str(e)}")
-        return jsonify({'status': 'Error', 'message': str(e)}), 500
-
-
-# --------------------------------------------HOME
-
+# ---------------------------------------------GET
 
 @app.route('/', methods=['GET'])
 def home():
     return "Welcome"
-
-# ---------------------------------------------GET
 
 
 @app.route('/getUser/<int:id>', methods=['GET'])
@@ -112,7 +74,6 @@ def get_vaccine_by_id(id):
     }), 201
 
 
-# VACUNA POR MASCOTA--------------------------------------
 @app.route('/getVaccinesByPet/<int:pet_id>', methods=['GET'])
 def get_vaccines_by_pet(pet_id):
     vaccines = Vaccines.query.filter_by(pet_id=pet_id).all()
@@ -133,7 +94,6 @@ def get_deworming_by_id(id):
     }), 201
 
 
-# DESPARACITACIÓN POR MASCOTA--------------------------------------
 @app.route('/getDewormingsByPet/<int:pet_id>', methods=['GET'])
 def get_dewormings_by_pet(pet_id):
     dewormings = Dewormings.query.filter_by(pet_id=pet_id).all()
@@ -164,6 +124,13 @@ def get_medical_history_by_id(id):
     }), 201
 
 
+@app.route('/getEventsByUserId/<int:id>', methods=['GET'])
+def get_events_by_user_id(id):
+    events = UserCalendarEvent.query.filter_by(
+        user_id=id).all()
+    serialized_events = [event.serialize() for event in events]
+    # user = get_jwt_identity()
+    return jsonify(serialized_events), 200
 
 
 
@@ -177,7 +144,7 @@ def create_user():
 
     if user_exists:
         return {
-            'message': 'User already exists',
+            'message': 'Usuario ya existe',
         }, 409
 
     try:
@@ -206,7 +173,7 @@ def create_user():
             identity=user.serialize(), expires_delta=expire)
 
         return {
-            'message': 'User created successfully',
+            'message': 'Usuario creado satisfactoriamente',
             'token': token,
             'user': user.serialize()
         }, 201
@@ -219,6 +186,7 @@ def create_user():
         }, 500
 
 
+
 @app.route('/updateUser', methods=['POST'])
 def update_user():
     data = request.form
@@ -227,14 +195,14 @@ def update_user():
     user = Users.query.filter_by(id=data['user_id']).first()
     if not user:
         return {
-            'message': 'User not found',
+            'message': 'Usuario no encontrado',
         }, 404
 
     existing_user = Users.query.filter(
         Users.email == data['email'], Users.id != data['user_id']).first()
     if existing_user:
         return {
-            'message': 'Email already in use',
+            'message': 'Email ya esta en uso',
         }, 409
 
     user.name = data.get('name', user.name)
@@ -258,7 +226,7 @@ def update_user():
             identity=user.serialize(), expires_delta=expire)
 
         return {
-            'message': 'User updated successfully',
+            'message': 'Usuario actualizado satisfactoriamente',
             'token': token,
             'user': user.serialize()
         }, 200
@@ -266,25 +234,11 @@ def update_user():
     except Exception as e:
         print(f"Error updating image in Cloudinary: {e}")
         return {
-            'message': 'Error updating user or image',
+            'message': 'Error actualizando usuario o imagen',
             'error': str(e)
         }, 500
 
 
-@app.route('/deleteUser/<int:id>', methods=['POST'])
-def deleteUser(id):
-    try:
-        user = Users.query.filter_by(id=id).first()
-        if user:
-            user.is_active = False
-
-            db.session.commit()
-            return jsonify({"message": "User has been deactivated."}), 200
-        else:
-            return jsonify({"error": "User not found."}), 404
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": f"Error deactivating user: {str(e)}"}), 500
 
 
 @app.route('/login', methods=['POST'])
@@ -331,41 +285,9 @@ def create_pet():
     db.session.commit()
 
     return {
-        'message': 'Pet created successfully',
+        'message': 'Mascota creada satisfactoriamente',
         "data": user.serialize()
     }, 201
-
-
-@app.route('/deletePet', methods=['DELETE'])
-def delete_pet():
-    try:
-        data = request.json
-        pet_id = data.get('petId')
-        user_id = data.get('userId')
-
-        user = Users.query.filter_by(id=user_id).first()
-        pet = Pets.query.filter_by(id=pet_id).first()
-
-        if not user or not pet:
-            return jsonify({"message": "User or pet not found"}), 404
-
-        if pet.image:
-            public_id = pet.image.split('/')[-1].split('.')[0]
-            cloudinary.uploader.destroy(f'petCenter/pets/{public_id}')
-
-        db.session.delete(pet)
-        db.session.commit()
-
-        updated_user = user.serialize()
-
-        return jsonify({
-            "message": "Pet deleted successfully",
-            "data": updated_user
-        }), 200
-
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"message": "An error occurred", "error": str(e)}), 500
 
 
 @app.route('/createVaccine', methods=['POST'])
@@ -396,12 +318,11 @@ def create_vaccine():
         else:
             vaccine.image = data.get('image')
 
-        #  create vaccine
         db.session.add(vaccine)
         db.session.commit()
 
         return jsonify({
-            'message': 'Vaccine created successfully',
+            'message': 'Vacuna creada satisfactoriamente',
             'data': vaccine.serialize()
         }), 201
 
@@ -429,7 +350,7 @@ def create_deworming():
     db.session.commit()
 
     return {
-        'message': 'Deworming created successfully'
+        'message': 'Desparasitación creada satisfactoriamente'
     }, 201
 
 
@@ -449,7 +370,7 @@ def create_weight_control():
     db.session.commit()
 
     return {
-        'message': 'Weight_control created successfully'
+        'message': 'Weight_control created satisfactoriamente'
     }, 201
 
 
@@ -474,11 +395,9 @@ def create_medical_history():
     db.session.commit()
 
     return {
-        'message': 'Medical_history created successfully'
+        'message': 'Historial médico registrado satisfactoriamente'
     }, 201
 
-
-# ------- Events ------------------
 
 @app.route('/createEvents', methods=['POST'])
 def create_event():
@@ -497,14 +416,55 @@ def create_event():
 
     return jsonify(new_event.serialize()), 200
 
+#---------------------------------------------------------------DELETE
 
-@app.route('/getEventsByUserId/<int:id>', methods=['GET'])
-def get_events_by_user_id(id):
-    events = UserCalendarEvent.query.filter_by(
-        user_id=id).all()
-    serialized_events = [event.serialize() for event in events]
-    user = get_jwt_identity()
-    return jsonify({'serialized_events': serialized_events, 'user': user}), 200
+@app.route('/deleteUser/<int:id>', methods=['POST'])
+def deleteUser(id):
+    try:
+        user = Users.query.filter_by(id=id).first()
+        if user:
+            user.is_active = False
+
+            db.session.commit()
+            return jsonify({"message": "Usuario ha sido desactivado"}), 200
+        else:
+            return jsonify({"error": "Usuario no se encuentra"}), 404
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error deactivating user: {str(e)}"}), 500
+
+
+@app.route('/deletePet', methods=['DELETE'])
+def delete_pet():
+    try:
+        data = request.json
+        pet_id = data.get('petId')
+        user_id = data.get('userId')
+
+        user = Users.query.filter_by(id=user_id).first()
+        pet = Pets.query.filter_by(id=pet_id).first()
+
+        if not user or not pet:
+            return jsonify({"message": "User or pet not found"}), 404
+
+        if pet.image:
+            public_id = pet.image.split('/')[-1].split('.')[0]
+            cloudinary.uploader.destroy(f'petCenter/pets/{public_id}')
+
+        db.session.delete(pet)
+        db.session.commit()
+
+        updated_user = user.serialize()
+
+        return jsonify({
+            "message": "Mascota eliminada satisfactoriamente",
+            "data": updated_user
+        }), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500
+
 
 
 @app.route('/deleteEvent/<int:event_id>', methods=['DELETE'])
@@ -528,6 +488,9 @@ def delete_event(event_id):
     else:
         return jsonify({"error": "Evento no encontrado o no pertenece al usuario"}), 404
 
+
+
+# ---------------------------------------------------PUT
 
 @app.route('/updateEvent/<int:event_id>', methods=["PUT"])
 def update_event(event_id):
@@ -554,6 +517,8 @@ def update_event(event_id):
         return jsonify({"error": "Evento no encontrado o no pertenece al usuario"}), 404
 
 
-# ---------------------------------------------PUT
 if __name__ == "__main__":
     app.run(host='localhost', port=5004, debug=True)
+
+
+
