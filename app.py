@@ -189,16 +189,8 @@ def update_user():
             'message': 'User not found',
         }, 404
 
-    existing_user = Users.query.filter(
-        Users.email == data['email'], Users.id != data['user_id']).first()
-    if existing_user:
-        return {
-            'message': 'Email already in use',
-        }, 409
-
     user.name = data.get('name', user.name)
     user.lastName = data.get('lastName', user.lastName)
-    user.email = data.get('email', user.email)
 
     try:
         if image:
