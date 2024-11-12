@@ -144,7 +144,7 @@ def create_user():
 
     if user_exists:
         return {
-            'message': 'User already exists',
+            'message': 'El usuario ya existe',
         }, 409
 
     try:
@@ -173,7 +173,7 @@ def create_user():
             identity=user.serialize(), expires_delta=expire)
 
         return {
-            'message': 'User created successfully',
+            'message': 'Usuario creado con éxito',
             'token': token,
             'user': user.serialize()
         }, 201
@@ -217,7 +217,7 @@ def update_user():
             identity=user.serialize(), expires_delta=expire)
 
         return {
-            'message': 'User updated successfully',
+            'message': 'Usuario actualizado con éxito',
             'token': token,
             'user': user.serialize()
         }, 200
@@ -290,7 +290,7 @@ def create_pet():
     db.session.commit()
 
     return {
-        'message': 'Pet created successfully',
+        'message': 'Mascota registrada con éxito',
         "data": user.serialize()
     }, 201
 
@@ -330,7 +330,7 @@ def create_vaccine():
         db.session.commit()
 
         return jsonify({
-            'message': 'Vaccine created successfully',
+            'message': 'Vacuna registrada con éxito',
             'data': vaccine.serialize()
         }), 201
 
@@ -358,7 +358,7 @@ def create_deworming():
     db.session.commit()
 
     return {
-        'message': 'Deworming created successfully'
+        'message': 'Desparasitación registrada con éxito'
     }, 201
 
 
