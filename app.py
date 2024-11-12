@@ -74,6 +74,7 @@ def get_vaccine_by_id(id):
 
 
 @app.route('/getVaccinesByPet/<int:pet_id>', methods=['GET'])
+@jwt_required()
 def get_vaccines_by_pet(pet_id):
     vaccines = Vaccines.query.filter_by(pet_id=pet_id).all()
 
@@ -94,6 +95,7 @@ def get_deworming_by_id(id):
 
 
 @app.route('/getDewormingsByPet/<int:pet_id>', methods=['GET'])
+@jwt_required()
 def get_dewormings_by_pet(pet_id):
     dewormings = Dewormings.query.filter_by(pet_id=pet_id).all()
 
@@ -124,6 +126,7 @@ def get_medical_history_by_id(id):
 
 
 @app.route('/getEventsByUserId/<int:id>', methods=['GET'])
+@jwt_required()
 def get_events_by_user_id(id):
     events = UserCalendarEvent.query.filter_by(
         user_id=id).all()
@@ -296,9 +299,6 @@ def create_pet():
 
 
 
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"message": "An error occurred", "error": str(e)}), 500
 
 
 @app.route('/createVaccine', methods=['POST'])
@@ -486,6 +486,10 @@ def delete_pet():
             "message": "Pet deleted successfully",
             "data": updated_user
         }), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500
 
 
 @app.route('/deleteEvent/<int:event_id>', methods=['DELETE'])
