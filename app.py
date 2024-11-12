@@ -43,7 +43,6 @@ def home():
 
 # ---------------------------------------------GET
 
-
 @app.route('/getUser/<int:id>', methods=['GET'])
 def get_user_by_id(id):
     user = Users.query.filter_by(id=id).first()
@@ -74,7 +73,6 @@ def get_vaccine_by_id(id):
     }), 201
 
 
-# VACUNA POR MASCOTA--------------------------------------
 @app.route('/getVaccinesByPet/<int:pet_id>', methods=['GET'])
 def get_vaccines_by_pet(pet_id):
     vaccines = Vaccines.query.filter_by(pet_id=pet_id).all()
@@ -95,7 +93,6 @@ def get_deworming_by_id(id):
     }), 201
 
 
-# DESPARACITACIÓN POR MASCOTA--------------------------------------
 @app.route('/getDewormingsByPet/<int:pet_id>', methods=['GET'])
 def get_dewormings_by_pet(pet_id):
     dewormings = Dewormings.query.filter_by(pet_id=pet_id).all()
@@ -126,7 +123,18 @@ def get_medical_history_by_id(id):
     }), 201
 
 
+@app.route('/getEventsByUserId/<int:id>', methods=['GET'])
+def get_events_by_user_id(id):
+    events = UserCalendarEvent.query.filter_by(
+        user_id=id).all()
+    serialized_events = [event.serialize() for event in events]
+    return jsonify(serialized_events), 200
+
+
+
+
 # --------------------------------------------POST
+
 @app.route('/createUser', methods=['POST'])
 def create_user():
     data = request.form
@@ -287,32 +295,6 @@ def create_pet():
     }, 201
 
 
-@app.route('/deletePet', methods=['DELETE'])
-def delete_pet():
-    try:
-        data = request.json
-        pet_id = data.get('petId')
-        user_id = data.get('userId')
-
-        user = Users.query.filter_by(id=user_id).first()
-        pet = Pets.query.filter_by(id=pet_id).first()
-
-        if not user or not pet:
-            return jsonify({"message": "User or pet not found"}), 404
-
-        if pet.image:
-            public_id = pet.image.split('/')[-1].split('.')[0]
-            cloudinary.uploader.destroy(f'petCenter/pets/{public_id}')
-
-        db.session.delete(pet)
-        db.session.commit()
-
-        updated_user = user.serialize()
-
-        return jsonify({
-            "message": "Pet deleted successfully",
-            "data": updated_user
-        }), 200
 
     except Exception as e:
         print(f"Error: {e}")
@@ -332,7 +314,6 @@ def create_vaccine():
         vaccine.vaccine = data['vaccine']
         vaccine.next_vaccine = data['nextVaccine']
 
-        #  Upload the image to Cloudinary
         if image:
             try:
                 upload_result = cloudinary.uploader.upload(
@@ -347,7 +328,6 @@ def create_vaccine():
         else:
             vaccine.image = data.get('image')
 
-        #  create vaccine
         db.session.add(vaccine)
         db.session.commit()
 
@@ -429,8 +409,6 @@ def create_medical_history():
     }, 201
 
 
-# ------- Events ------------------
-
 @app.route('/createEvents/<int:id>', methods=['POST'])
 def create_event(id):
     data = request.json
@@ -449,35 +427,9 @@ def create_event(id):
     return jsonify(new_event.serialize()), 200
 
 
-@app.route('/getEventsByUserId/<int:id>', methods=['GET'])
-def get_events_by_user_id(id):
-    events = UserCalendarEvent.query.filter_by(
-        user_id=id).all()
-    serialized_events = [event.serialize() for event in events]
-    return jsonify(serialized_events), 200
 
 
-@app.route('/deleteEvent/<int:event_id>', methods=['DELETE'])
-def delete_event(event_id):
-    data = request.json
-    user_id = data.get('user_id')
-    event = UserCalendarEvent.query.get(event_id)
-
-    if event and event.user_id == user_id:
-        db.session.delete(event)
-        db.session.commit()
-
-        remaining_events = UserCalendarEvent.query.filter_by(
-            user_id=user_id).all()
-        serialized_events = [event.serialize() for event in remaining_events]
-
-        return jsonify({
-            "message": "Evento eliminado con éxito",
-            "events": serialized_events
-        }), 200
-    else:
-        return jsonify({"error": "Evento no encontrado o no pertenece al usuario"}), 404
-
+# ---------------------------------------------PUT
 
 @app.route('/updateEvent/<int:event_id>', methods=["PUT"])
 def update_event(event_id):
@@ -504,6 +456,60 @@ def update_event(event_id):
         return jsonify({"error": "Evento no encontrado o no pertenece al usuario"}), 404
 
 
-# ---------------------------------------------PUT
+
+
+#--------------------------------------------------------DELETE
+
+@app.route('/deletePet', methods=['DELETE'])
+def delete_pet():
+    try:
+        data = request.json
+        pet_id = data.get('petId')
+        user_id = data.get('userId')
+
+        user = Users.query.filter_by(id=user_id).first()
+        pet = Pets.query.filter_by(id=pet_id).first()
+
+        if not user or not pet:
+            return jsonify({"message": "User or pet not found"}), 404
+
+        if pet.image:
+            public_id = pet.image.split('/')[-1].split('.')[0]
+            cloudinary.uploader.destroy(f'petCenter/pets/{public_id}')
+
+        db.session.delete(pet)
+        db.session.commit()
+
+        updated_user = user.serialize()
+
+        return jsonify({
+            "message": "Pet deleted successfully",
+            "data": updated_user
+        }), 200
+
+
+@app.route('/deleteEvent/<int:event_id>', methods=['DELETE'])
+def delete_event(event_id):
+    data = request.json
+    user_id = data.get('user_id')
+    event = UserCalendarEvent.query.get(event_id)
+
+    if event and event.user_id == user_id:
+        db.session.delete(event)
+        db.session.commit()
+
+        remaining_events = UserCalendarEvent.query.filter_by(
+            user_id=user_id).all()
+        serialized_events = [event.serialize() for event in remaining_events]
+
+        return jsonify({
+            "message": "Evento eliminado con éxito",
+            "events": serialized_events
+        }), 200
+    else:
+        return jsonify({"error": "Evento no encontrado o no pertenece al usuario"}), 404
+
+
+
 if __name__ == "__main__":
     app.run(host='localhost', port=5004, debug=True)
