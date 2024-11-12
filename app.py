@@ -296,9 +296,7 @@ def create_pet():
 
 
 
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"message": "An error occurred", "error": str(e)}), 500
+    
 
 
 @app.route('/createVaccine', methods=['POST'])
@@ -486,6 +484,10 @@ def delete_pet():
             "message": "Pet deleted successfully",
             "data": updated_user
         }), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500
 
 
 @app.route('/deleteEvent/<int:event_id>', methods=['DELETE'])
