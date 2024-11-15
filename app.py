@@ -30,7 +30,13 @@ db.init_app(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
-CORS(app)
+CORS(app, resources={
+    r"/*": {
+        "origins": "http://localhost:5173",  
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],  
+        "allow_headers": ["Content-Type", "Authorization"] 
+    }
+})
 
 expire = timedelta(minutes=60)
 
@@ -128,12 +134,21 @@ def get_medical_history_by_id(id):
 @app.route('/getEventsByUserId/<int:id>', methods=['GET'])
 @jwt_required()
 def get_events_by_user_id(id):
-    events = UserCalendarEvent.query.filter_by(
-        user_id=id).all()
+    events = UserCalendarEvent.query.filter_by(user_id=id).all()
     serialized_events = [event.serialize() for event in events]
     return jsonify(serialized_events), 200
 
 
+@app.route('/getPetsByUserId/<int:id>', methods=['GET'])
+@jwt_required()
+def get_pets_by_user_id(id):
+    user = Users.query.filter_by(id=id).first()
+    pets = user.owned_pets
+    
+    return jsonify({
+        'status': 'Success',
+        'data': [pet.serialize() for pet in pets]
+    }), 200
 
 
 # --------------------------------------------POST
@@ -271,6 +286,7 @@ def login():
 
 
 @app.route('/createPet', methods=['POST'])
+@jwt_required()
 def create_pet():
     data = request.form
     image = request.files.get('image')
@@ -332,7 +348,7 @@ def create_vaccine():
         db.session.commit()
 
         return jsonify({
-            'message': 'Vaccine created successfully',
+            'message': 'Vacuna registrada con éxito',
             'data': vaccine.serialize()
         }), 201
 
@@ -360,7 +376,7 @@ def create_deworming():
     db.session.commit()
 
     return {
-        'message': 'Deworming created successfully'
+        'message': 'Desparasitación registrada con éxito'
     }, 201
 
 
@@ -461,6 +477,7 @@ def update_event(event_id):
 #--------------------------------------------------------DELETE
 
 @app.route('/deletePet', methods=['DELETE'])
+@jwt_required()
 def delete_pet():
     try:
         data = request.json
