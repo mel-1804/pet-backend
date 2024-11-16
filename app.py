@@ -24,7 +24,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mibasededatos.db'
 app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=60)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=1)
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -38,7 +38,7 @@ CORS(app, resources={
     }
 })
 
-expire = timedelta(minutes=60)
+expire = timedelta(minutes=1)
 
 # --------------------------------------------HOME
 
