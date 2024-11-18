@@ -51,6 +51,7 @@ class Pets(db.Model):
     race = db.Column(db.String(50), nullable=False)
     birthday = db.Column(db.String(50), nullable=False)
     image = db.Column(db.String(50), nullable=True)
+    
 
     def serialize(self):
         return {

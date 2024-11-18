@@ -24,15 +24,21 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mibasededatos.db'
 app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=60)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=1)
 
 db.init_app(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
-CORS(app)
+CORS(app, resources={
+    r"/*": {
+        "origins": "http://localhost:5173",  
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],  
+        "allow_headers": ["Content-Type", "Authorization"] 
+    }
+})
 
-expire = timedelta(minutes=60)
+expire = timedelta(minutes=1)
 
 # --------------------------------------------HOME
 
@@ -74,6 +80,7 @@ def get_vaccine_by_id(id):
 
 
 @app.route('/getVaccinesByPet/<int:pet_id>', methods=['GET'])
+@jwt_required()
 def get_vaccines_by_pet(pet_id):
     vaccines = Vaccines.query.filter_by(pet_id=pet_id).all()
 
@@ -94,6 +101,7 @@ def get_deworming_by_id(id):
 
 
 @app.route('/getDewormingsByPet/<int:pet_id>', methods=['GET'])
+@jwt_required()
 def get_dewormings_by_pet(pet_id):
     dewormings = Dewormings.query.filter_by(pet_id=pet_id).all()
 
@@ -124,13 +132,23 @@ def get_medical_history_by_id(id):
 
 
 @app.route('/getEventsByUserId/<int:id>', methods=['GET'])
+@jwt_required()
 def get_events_by_user_id(id):
-    events = UserCalendarEvent.query.filter_by(
-        user_id=id).all()
+    events = UserCalendarEvent.query.filter_by(user_id=id).all()
     serialized_events = [event.serialize() for event in events]
     return jsonify(serialized_events), 200
 
 
+@app.route('/getPetsByUserId/<int:id>', methods=['GET'])
+@jwt_required()
+def get_pets_by_user_id(id):
+    user = Users.query.filter_by(id=id).first()
+    pets = user.owned_pets
+    
+    return jsonify({
+        'status': 'Success',
+        'data': [pet.serialize() for pet in pets]
+    }), 200
 
 
 # --------------------------------------------POST
@@ -268,6 +286,7 @@ def login():
 
 
 @app.route('/createPet', methods=['POST'])
+@jwt_required()
 def create_pet():
     data = request.form
     image = request.files.get('image')
@@ -294,11 +313,7 @@ def create_pet():
         "data": user.serialize()
     }, 201
 
-
-
-    
-
-
+ 
 @app.route('/createVaccine', methods=['POST'])
 def create_vaccine():
     data = request.form
@@ -459,6 +474,7 @@ def update_event(event_id):
 #--------------------------------------------------------DELETE
 
 @app.route('/deletePet', methods=['DELETE'])
+@jwt_required()
 def delete_pet():
     try:
         data = request.json
