@@ -24,7 +24,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mibasededatos.db'
 app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=1)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=60)
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -38,7 +38,7 @@ CORS(app, resources={
     }
 })
 
-expire = timedelta(minutes=1)
+expire = timedelta(minutes=60)
 
 # --------------------------------------------HOME
 
@@ -422,12 +422,38 @@ def create_medical_history():
     }, 201
 
 
+# @app.route('/createEvents/<int:id>', methods=['POST'])
+# def create_event(id):
+#     data = request.json
+#     user_id = data.get('user_id')
+#     description = data.get('description')
+#     event_date = datetime.fromisoformat(data.get('event_date'))
+
+#     new_event = UserCalendarEvent(
+#         user_id=user_id,
+#         description=description,
+#         event_date=event_date,
+#     )
+#     db.session.add(new_event)
+#     db.session.commit()
+
+#     return jsonify(new_event.serialize()), 200
+
 @app.route('/createEvents/<int:id>', methods=['POST'])
+@jwt_required()
 def create_event(id):
     data = request.json
     user_id = data.get('user_id')
     description = data.get('description')
-    event_date = datetime.fromisoformat(data.get('event_date'))
+    event_date_str = data.get('event_date_str')
+    
+    if not event_date_str:
+        return jsonify({"error": "El campo 'event_date' es obligatorio"}), 400
+
+    try:
+        event_date = datetime.fromisoformat(event_date_str)
+    except ValueError:
+        return jsonify({"error": "El formato de 'event_date' no es válido, debe ser ISO 8601"}), 400
 
     new_event = UserCalendarEvent(
         user_id=user_id,
@@ -438,7 +464,6 @@ def create_event(id):
     db.session.commit()
 
     return jsonify(new_event.serialize()), 200
-
 
 
 
